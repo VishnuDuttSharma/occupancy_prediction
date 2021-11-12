@@ -109,10 +109,7 @@ class BotController:
             orthographic=True,
             orthographicSize=3.25,
             skyboxColor="white"
-            )[[1.299038052558899, 0.0, 0.0, 0.0],
- [0.0, 1.7320507764816284, 0.0, 0.0],
- [0.0, 0.0, -1.0100502967834473, -0.2010050266981125],
- [0.0, 0.0, -1.0, 0.0]]
+            )
 
 
         self.extra_cameras['Top'] = len(self.extra_cameras)
