@@ -29,6 +29,29 @@ if using_notebook:
 print("AI2-THOR Version: " + ai2thor.__version__)
 
 
+projectionMatrix = np.asarray([[1.299038052558899, 0.0, 0.0, 0.0],
+                                [0.0, 1.7320507764816284, 0.0, 0.0],
+                                [0.0, 0.0, -1.0100502967834473, -0.2010050266981125],
+                                [0.0, 0.0, -1.0, 0.0]]
+                             )
+
+projectionMatrix_inverse = np.asarray([[1.299038052558899, 0.0, 0.0, 0.0],
+                                       [0.0, 1.7320507764816284, 0.0, 0.0],
+                                       [0.0, 0.0, -1.0100502967834473, -0.2010050266981125],
+                                       [0.0, 0.0, -1.0, 0.0]]
+                                     )
+
+cameraToWorldMatrix = np.asarray([[1.0, 0.0, 0.0, -2.299999952316284],
+                                  [0.0, 1.0, 0.0, 0.8714570999145508],
+                                  [-0.0, -0.0, -1.0, 2.700000047683716],
+                                  [0.0, 0.0, 0.0, 1.0]]
+                                )
+
+
+
+
+
+
 #### 
 class BotController:
     def __init__(self, init_scene="FloorPlan201", get_depth=True, get_segment=True, tp_height=0.50, tp_side_shift=0.30, tp_side_rot=30):
@@ -86,7 +109,11 @@ class BotController:
             orthographic=True,
             orthographicSize=3.25,
             skyboxColor="white"
-            )
+            )[[1.299038052558899, 0.0, 0.0, 0.0],
+ [0.0, 1.7320507764816284, 0.0, 0.0],
+ [0.0, 0.0, -1.0100502967834473, -0.2010050266981125],
+ [0.0, 0.0, -1.0, 0.0]]
+
 
         self.extra_cameras['Top'] = len(self.extra_cameras)
 
@@ -260,3 +287,4 @@ class BotController:
             img_dict['segment'] = seg_images
         
         return img_dict
+    
