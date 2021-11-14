@@ -223,7 +223,7 @@ class BotController:
         cam_left_rot['y'] -= self.tp_side_rot
         event = self.controller.step( 
             action="UpdateThirdPartyCamera",
-            thirdPartyCameraId=self.extra_cameras['Left'],
+            thirdPartyCameraId=self.extra_cameras['Right'],
             position=cam_left_pos, 
             rotation=cam_left_rot,
             fieldOfView=60
@@ -236,7 +236,7 @@ class BotController:
         cam_right_rot['y'] += self.tp_side_rot
         event = self.controller.step( 
             action="UpdateThirdPartyCamera",
-            thirdPartyCameraId=self.extra_cameras['Right'],
+            thirdPartyCameraId=self.extra_cameras['Left'],
             position=cam_right_pos, 
             rotation=cam_right_rot,
             fieldOfView=60
