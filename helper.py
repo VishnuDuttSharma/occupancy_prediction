@@ -1,4 +1,4 @@
-__version__  = '0.1'
+__version__  = '0.2'
 __author__ = 'Vishnu Dutt Sharma'
 ___email__ = 'vishnuds@umd.edu'
 
@@ -52,8 +52,18 @@ cameraToWorldMatrix = np.asarray([[1.0, 0.0, 0.0, -2.299999952316284],
                                 )
 
 
+def d2r(deg):
+    """Function to convert angle ion degrees to radians
 
+    Parameters
+    ----------
+        deg : Angle in degrees
 
+    Returns
+    -------
+        float: Angle in radians
+    """
+    return np.pi*deg/180.
 
 
 #### 
@@ -124,6 +134,26 @@ class BotController:
             None
         """
         self.controller.reset(scene=scene)
+
+    def get_rotation_matrix(self, angle):
+        """Function to get rotation matrices for left and right cameras
+
+        Paramaters
+        ----------
+            angle: Angle of rotation in degrees
+
+        Returns
+        -------
+            np.ndarray: Rotation matrix for the side cameras
+        """
+        # Calculate rotation matrix for the cameras
+        rot_mat = np.array([
+            [np.cos(d2r(angle)),  np.sin(d2r(angle))],
+            [-np.sin(d2r(angle)),  np.cos(d2r(angle))]
+        ])
+
+        return rot_mat
+
 
     def get_intrinsic_matric(self):
         """Function to calculate the intrinsic matrix for the robot-mounted (ans the center, left, and right) cameras
@@ -205,13 +235,19 @@ class BotController:
         robot_pos = self.controller.last_event.metadata['agent']['position'].copy()
         robot_rot = self.controller.last_event.metadata['agent']['rotation'].copy()
         
-        
+        # Get rotation matrix
+        yaw = d2r(robot_rot['y'])
+        rot_mat = self.get_rotation_matrix(robot_rot['y'])
+
         ##### Center Camera Setup
         ## Copy the robot position and rotation
         cam_center_pos = robot_pos.copy()
         cam_center_rot = robot_rot.copy()
         # Set the camera height
         cam_center_pos['y'] = self.tp_height
+        # Moving the camera 0.05m ahead to avoid seeding rotbo's bars
+        cam_center_pos['x'] += 0.05*np.sin(yaw)
+        cam_center_pos['z'] += 0.05*np.cos(yaw)
         # Place the third party camera
         event = self.controller.step( 
             action="AddThirdPartyCamera", 
@@ -227,7 +263,11 @@ class BotController:
         cam_left_pos = robot_pos.copy()
         # Place the camera at the user-defined height and user-defined distance away towards the left
         cam_left_pos['y'] = self.tp_height
-        cam_left_pos['x'] -= self.tp_side_shift
+        # Getting displacement in the world frame
+        x_disp, z_disp = rot_mat @ np.array([-self.tp_side_shift, 0.05])
+        # update coordinates in the world frame
+        cam_left_pos['x'] += x_disp
+        cam_left_pos['z'] += z_disp
         # Copy the robot rotation
         cam_left_rot = robot_rot.copy()
         # Give the camera a user-defined rotation
@@ -247,7 +287,11 @@ class BotController:
         cam_right_pos = robot_pos.copy()
         # Place the camera at the user-defined height and user-defined distance away towards the right
         cam_right_pos['y'] = self.tp_height
-        cam_right_pos['x'] += self.tp_side_shift
+        # Getting displacement in the world frame
+        x_disp, z_disp = rot_mat @ np.array([self.tp_side_shift, 0.05])
+        # update coordinates in the world frame
+        cam_right_pos['x'] += x_disp
+        cam_right_pos['z'] += z_disp
         # Copy the robot rotation
         cam_right_rot = robot_rot.copy()
         # Give the camera a user-defined rotation
@@ -368,12 +412,19 @@ class BotController:
         robot_pos = self.controller.last_event.metadata['agent']['position'].copy()
         robot_rot = self.controller.last_event.metadata['agent']['rotation'].copy()
         
+        # Get rotation matrix
+        yaw = d2r(robot_rot['y'])
+        rot_mat = self.get_rotation_matrix(robot_rot['y'])
+
         ##### Center Camera
         # Copy the robot pose
         cam_center_pos = robot_pos.copy()
         cam_center_rot = robot_rot.copy()
         # Set the camera height
         cam_center_pos['y'] = self.tp_height
+        # Moving the camera 0.05m ahead to avoid seeding rotbo's bars
+        cam_center_pos['x'] += 0.05*np.sin(yaw)
+        cam_center_pos['z'] += 0.05*np.cos(yaw)
         # Update the third-party camers pose
         event = self.controller.step( 
             action="UpdateThirdPartyCamera",
@@ -387,7 +438,11 @@ class BotController:
         cam_left_pos = robot_pos.copy()
         # Place the camera at the user-defined height and user-defined distance away towards the left
         cam_left_pos['y'] = self.tp_height
-        cam_left_pos['x'] -= self.tp_side_shift
+        # Getting displacement in the world frame
+        x_disp, z_disp = rot_mat @ np.array([-self.tp_side_shift, 0.05])
+        # update coordinates in the world frame
+        cam_left_pos['x'] += x_disp
+        cam_left_pos['z'] += z_disp
         # Copy the robot orientation
         cam_left_rot = robot_rot.copy()
         # Give the camera a user-defined rotation
@@ -405,7 +460,11 @@ class BotController:
         cam_right_pos = robot_pos.copy()
         # Place the camera at the user-defined height and user-defined distance away towards the right
         cam_right_pos['y'] = self.tp_height
-        cam_right_pos['x'] += self.tp_side_shift
+        # Getting displacement in the world frame
+        x_disp, z_disp = rot_mat @ np.array([self.tp_side_shift, 0.05])
+        # update coordinates in the world frame
+        cam_right_pos['x'] += x_disp
+        cam_right_pos['z'] += z_disp
         # Copy the robot orientation
         cam_right_rot = robot_rot.copy()
         # Give the camera a user-defined rotation
@@ -562,11 +621,11 @@ class BotController:
         colors = np.asarray(pcd.colors)
         
         # Create a placeholder for teh filter
-        filter = np.zeros((len(colors),), dtype=np.bool)
+        filter_idx = np.zeros((len(colors),), dtype=np.bool)
         
         # Iterate over the colors in the exclusion list and set filter to true if a match is found. += in this fucntion simulated bitwise OR
         for col in exclusion_list:
-            filter += (colors == np.array(col)/255.).all(axis=1)
+            filter_idx += (colors == np.array(col)/255.).all(axis=1)
         
         # Return the inversion of the filter as we want to remove the points given in the exclusion list
-        return ~filter #pcd.select_by_index(filter[:,0])
+        return ~filter_idx #pcd.select_by_index(filter[:,0])
