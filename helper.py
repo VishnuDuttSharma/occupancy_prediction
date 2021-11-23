@@ -1,4 +1,4 @@
-__version__  = '0.2'
+__version__  = '0.3'
 __author__ = 'Vishnu Dutt Sharma'
 ___email__ = 'vishnuds@umd.edu'
 
@@ -594,7 +594,7 @@ class BotController:
                                                             depth_trunc=10.0,
                                                             convert_rgb_to_intensity=False)
         # Get the poin cloud using camera instrinsic matrix 
-        pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd, controller.intrinsic)#, extrinsic=cameraToWorldMatrix)
+        pcd = o3d.geometry.PointCloud.create_from_rgbd_image(rgbd, self.intrinsic)#, extrinsic=cameraToWorldMatrix)
         
         ### uncomment to change the frame
         # pcd.transform([[1, 0, 0, 0],
