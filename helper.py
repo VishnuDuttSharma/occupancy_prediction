@@ -629,3 +629,47 @@ class BotController:
         
         # Return the inversion of the filter as we want to remove the points given in the exclusion list
         return ~filter_idx #pcd.select_by_index(filter[:,0])
+
+    def get_all_point_clouds(self):
+        """Function to get the point clouds from all the ground cameras (center, left, right)
+        
+        Parameters
+        ----------
+            None
+        
+        Returns
+        -------
+            list: List of open3d point clouds from center, left, and right cameras respectively
+        """
+        img_dict = self.get_images()
+        pcd_list = []
+        ## Center
+        scene_img = img_dict['segment']['Center']
+        depth_img = img_dict['depth']['Center']
+
+        center_pcd = controller.get_point_cloud(scene_img, depth_img)
+        pcd_list.append(copy.copy(center_pcd))
+
+        ## Left
+        scene_img = img_dict['segment']['Left']
+        depth_img = img_dict['depth']['Left']
+
+        left_pcd = controller.get_point_cloud(scene_img, depth_img)
+        R = o3d.geometry.get_rotation_matrix_from_xyz((0., d2r(self.tp_side_rot), 0.))
+        left_pcd = left_pcd.rotate(R, center=(0., 0., 0.))
+        left_pcd = left_pcd.translate([self.tp_side_shift, 0., 0.])
+
+        pcd_list.append(copy.copy(left_pcd))
+
+        ## Right
+        scene_img = img_dict['segment']['Right']
+        depth_img = img_dict['depth']['Right']
+
+        right_pcd = controller.get_point_cloud(scene_img, depth_img)
+        R = o3d.geometry.get_rotation_matrix_from_xyz((0., d2r(-self.tp_side_rot), 0.))
+        right_pcd = right_pcd.rotate(R, center=(0., 0., 0.))
+        right_pcd = right_pcd.translate([-self.tp_side_shift, 0., 0.])
+
+        pcd_list.append(copy.copy(right_pcd))
+
+        return pcd_list
