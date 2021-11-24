@@ -1,4 +1,4 @@
-__version__  = '0.3'
+__version__  = '0.4'
 __author__ = 'Vishnu Dutt Sharma'
 ___email__ = 'vishnuds@umd.edu'
 
@@ -673,3 +673,67 @@ class BotController:
         pcd_list.append(copy.copy(right_pcd))
 
         return pcd_list
+
+def pcd_to_raw_map(pcd, xlims=(-2.5,2.5), ylims=(0,5), map_size=(256,256)):
+    """
+    Function to convert point cloud to raw 2D occupany map/Histogram.
+    The resulting histogram needs to transposed and vertically flipped to match with teh world frame image
+
+    Parameters
+    ----------
+        pcd: Point cloud, an open3d.Pointcloud object
+        xlims: Limits of the x-coordinates of point cloud as tuple
+        ylims: Limits of the y-coordinates of point cloud as tuple
+        map_size: Size of target map/image size as tuple
+
+    Returns
+    -------
+        np.ndarray: Histogram as a 2D array of dimentios defined by the map_size parameter
+    """
+    # Get points from Point cloud
+    points = np.asarray(pcd.points)
+
+    # Keep only the point that are within the limit
+    filter_ids = (points[:,0] >= xlims[0]) & (points[:,0] <= xlims[1]) & (points[:,2] >= ylims[0]) & (points[:,2] <= ylims[1])
+    # Filter data
+    pcd = pcd.select_by_index(np.where(filter_ids == True)[0])
+    
+    # Getting points from the filtered point cloud
+    points = np.asarray(pcd.points)
+    
+    '''Legacy debugger
+    colors = pcd.colors
+
+    # points[:,2] = ylims[0] - points[:,2]
+    # return points, colors
+    '''
+
+    # Rescale and quantize the points (Minmax scaling -> rescaling -> quantization by rounding)
+    x_pts = np.round((map_size[0]-1) * (points[:,0] - xlims[0])/(xlims[1] - xlims[0])).astype(int)
+    y_pts = np.round((map_size[1]-1) * (points[:,2] - ylims[0])/(ylims[1] - ylims[0])).astype(int)
+    
+    # Creating the map (as a histogram)
+    raw_map = np.zeros(map_size, dtype=int)
+    for i_pt in range(len(x_pts)):
+        raw_map[x_pts[i_pt], y_pts[i_pt]] += 1
+
+    
+    return occ_map
+
+
+def get_occ_map(pcd, floor_colors, ceiling_colors, ll_factor=0.01, max_pts=10):
+    """Function to get the occupancy map
+    """
+    filter_ido = controller.point_filter(pcd, floor_colors+ceiling_colors)
+    occ_pcd = pcd.select_by_index(np.where(filter_ido == True)[0])
+    occ_occ_map = convert_to_occmap(occ_pcd)
+    
+    filter_idf = controller.point_filter(pcd, floor_colors)
+    free_pcd = pcd.select_by_index(np.where(filter_idf == False)[0])
+    free_occ_map = convert_to_occmap(free_pcd)
+
+    comb_occ_map = occ_occ_map - free_occ_map
+
+    occ_map = ll_factor * np.clip(comb_occ_map, a_min=-max_pts, a_max=max_pts)
+
+    return occ_map
