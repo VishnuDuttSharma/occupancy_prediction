@@ -1,4 +1,4 @@
-__version__  = '0.4'
+__version__  = '0.5'
 __author__ = 'Vishnu Dutt Sharma'
 ___email__ = 'vishnuds@umd.edu'
 
@@ -98,7 +98,7 @@ class BotController:
         #    visibilityDistance=100,
            scene=init_scene,
            gridSize=0.10,
-           movementGaussianSigma=0.005,
+           movementGaussianSigma=0.0, #0.005,
            rotateStepDegrees=30,
            rotateGaussianSigma=0.0,
            renderDepthImage=get_depth,
@@ -647,14 +647,14 @@ class BotController:
         scene_img = img_dict['segment']['Center']
         depth_img = img_dict['depth']['Center']
 
-        center_pcd = controller.get_point_cloud(scene_img, depth_img)
+        center_pcd = self.get_point_cloud(scene_img, depth_img)
         pcd_list.append(copy.copy(center_pcd))
 
         ## Left
         scene_img = img_dict['segment']['Left']
         depth_img = img_dict['depth']['Left']
 
-        left_pcd = controller.get_point_cloud(scene_img, depth_img)
+        left_pcd = self.get_point_cloud(scene_img, depth_img)
         R = o3d.geometry.get_rotation_matrix_from_xyz((0., d2r(self.tp_side_rot), 0.))
         left_pcd = left_pcd.rotate(R, center=(0., 0., 0.))
         left_pcd = left_pcd.translate([self.tp_side_shift, 0., 0.])
@@ -665,7 +665,7 @@ class BotController:
         scene_img = img_dict['segment']['Right']
         depth_img = img_dict['depth']['Right']
 
-        right_pcd = controller.get_point_cloud(scene_img, depth_img)
+        right_pcd = self.get_point_cloud(scene_img, depth_img)
         R = o3d.geometry.get_rotation_matrix_from_xyz((0., d2r(-self.tp_side_rot), 0.))
         right_pcd = right_pcd.rotate(R, center=(0., 0., 0.))
         right_pcd = right_pcd.translate([-self.tp_side_shift, 0., 0.])
@@ -673,6 +673,33 @@ class BotController:
         pcd_list.append(copy.copy(right_pcd))
 
         return pcd_list
+
+
+def point_filter(pcd, exclusion_list):
+        """Function to return filter based on colors
+        
+        Parameters
+        ----------
+            pcd: Point cloud which is required to be filtered. It should have points and colors attributes
+            exlusion_list: List of colors (normalized) which are to be exceluded from the point cloud
+        
+        Returns
+        -------
+            np.ndarray: 1-D array of booleans indicating which points should be kept to exclude the colors passed as input argument
+        """
+        # Get the points and colors from teh point cloud and convert them to numpy arrays (otherwise they are open3d objects)
+        points = np.asarray(pcd.points)
+        colors = np.asarray(pcd.colors)
+        
+        # Create a placeholder for teh filter
+        filter_idx = np.zeros((len(colors),), dtype=np.bool)
+        
+        # Iterate over the colors in the exclusion list and set filter to true if a match is found. += in this fucntion simulated bitwise OR
+        for col in exclusion_list:
+            filter_idx += (colors == np.array(col)/255.).all(axis=1)
+        
+        # Return the inversion of the filter as we want to remove the points given in the exclusion list
+        return ~filter_idx #pcd.select_by_index(filter[:,0])
 
 def pcd_to_raw_map(pcd, xlims=(-2.5,2.5), ylims=(0,5), map_size=(256,256)):
     """
@@ -717,20 +744,19 @@ def pcd_to_raw_map(pcd, xlims=(-2.5,2.5), ylims=(0,5), map_size=(256,256)):
     for i_pt in range(len(x_pts)):
         raw_map[x_pts[i_pt], y_pts[i_pt]] += 1
 
-    
-    return occ_map
+    return raw_map
 
 
 def get_occ_map(pcd, floor_colors, ceiling_colors, ll_factor=0.01, max_pts=10):
     """Function to get the occupancy map
     """
-    filter_ido = controller.point_filter(pcd, floor_colors+ceiling_colors)
+    filter_ido = point_filter(pcd, floor_colors+ceiling_colors)
     occ_pcd = pcd.select_by_index(np.where(filter_ido == True)[0])
-    occ_occ_map = convert_to_occmap(occ_pcd)
+    occ_occ_map = pcd_to_raw_map(occ_pcd)
     
-    filter_idf = controller.point_filter(pcd, floor_colors)
+    filter_idf = point_filter(pcd, floor_colors)
     free_pcd = pcd.select_by_index(np.where(filter_idf == False)[0])
-    free_occ_map = convert_to_occmap(free_pcd)
+    free_occ_map = pcd_to_raw_map(free_pcd)
 
     comb_occ_map = occ_occ_map - free_occ_map
 
