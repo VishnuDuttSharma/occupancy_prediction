@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+## Code specifc
+**/saved_models/
+**/inp_data/
+**/gt_data/
+**/logs/
