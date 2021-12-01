@@ -134,3 +134,4 @@ dmypy.json
 **/inp_data/
 **/gt_data/
 **/logs/
+*.zip
