@@ -299,13 +299,18 @@ if __name__ == '__main__':
 
     # train the model
     model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}.pth"
+    
     solver = Solver(net, optimizer='sgd', lr=args.lr, max_epoch=args.ep, 
                     verbose=True, save_best=True, early_stop=5, 
                     outfile=model_path, save_full=True)
-    
+    if not args.load:
+        solver.train(train_loader, valid_loader)
+    else:
+        print(f'Loading pre-trained model from {model_path}')
+        # solver.net.load_state_dict(torch.load(model_path))
+        solver.net = torch.load(model_path)
 
-    solver.train(train_loader, valid_loader)
-    test_loss = solver.test(loader=loader)
+    test_loss = solver.test(loader=test_loader)
     print(f'Test loss: {test_loss}')
     
     print('Done.')
