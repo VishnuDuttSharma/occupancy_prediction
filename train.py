@@ -8,6 +8,7 @@ from torch import optim
 import torch.nn as nn
 from torch.utils.data import DataLoader, random_split
 from torch.utils.tensorboard import SummaryWriter
+import torch.nn.functional as F
 from torchvision import transforms
 
 from tqdm import tqdm
@@ -32,7 +33,12 @@ class Solver(object):
         if loss_fn == 'mse':
             self.criterion = nn.MSELoss()
         elif loss_fn == 'kl':
-            raise NotImplementedError
+            def KLloss(pred_odds, gt_odds):
+                pred_prob = torch.exp(pred_odds)/(1 + torch.exp(pred_odds))
+                gt_prob = torch.exp(gt_odds)/(1 + torch.exp(gt_odds))
+                return F.kl_div(pred_prob, gt_prob)
+            self.criterion = KLloss
+
         else: # Wasserstien
             raise NotImplementedError
         
@@ -50,9 +56,16 @@ class Solver(object):
         self.verbose = verbose
         self.early_stop = early_stop
         self.outfile = outfile
-        self.save_full = True
+        self.save_full = save_full
         
         self.writer = SummaryWriter('./logs/')
+
+        print('Model will use:')
+        print(f'\tLoss function: {loss_fn}')
+        print(f'\tOptimizer: {optimizer}')
+        print(f'\tLR: {lr}')
+        print(f'\tMax epochs: {max_epoch}')
+        print(f'\tEarly stop: {early_stop}')
 
     def train(self, train_loader, valid_loader=None):
         """Function to train the model
@@ -181,7 +194,8 @@ class Solver(object):
             
             self.writer.flush()
         
-        self.write.close()
+        self.writer.close()
+        
         print('Training completed')
         
 
@@ -301,9 +315,9 @@ if __name__ == '__main__':
     net = UNet(n_channels=1, n_classes=1, bilinear=True)
 
     # train the model
-    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}.pth"
+    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_KL.pth"
     
-    solver = Solver(net, optimizer='sgd', lr=args.lr, max_epoch=args.ep, 
+    solver = Solver(net, optimizer='sgd', loss_fn='kl', lr=args.lr, max_epoch=args.ep, 
                     verbose=True, save_best=True, early_stop=5, 
                     outfile=model_path, save_full=True)
     if not args.load:
