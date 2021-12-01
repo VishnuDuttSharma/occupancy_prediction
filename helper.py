@@ -2,7 +2,10 @@ __version__  = '0.5'
 __author__ = 'Vishnu Dutt Sharma'
 ___email__ = 'vishnuds@umd.edu'
 
-using_notebook = True
+# import sys
+# sys.path.append('/home/vishnuds/ai2thor')
+
+using_notebook = False
 
 # if using_notebook:
 #     !pip install --upgrade ai2thor ai2thor-colab &> /dev/null
@@ -30,7 +33,7 @@ if using_notebook:
 
     ai2thor_colab.start_xserver()
 
-print("AI2-THOR Version: " + ai2thor.__version__)
+# print("AI2-THOR Version: " + ai2thor.__version__)
 
 
 projectionMatrix = np.asarray([[1.299038052558899, 0.0, 0.0, 0.0],
@@ -97,7 +100,7 @@ class BotController:
         #    visibilityDistance=1.5,
         #    visibilityDistance=100,
            scene=init_scene,
-           gridSize=0.10,
+           gridSize=0.50,
            movementGaussianSigma=0.0, #0.005,
            rotateStepDegrees=30,
            rotateGaussianSigma=0.0,
