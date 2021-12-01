@@ -14,6 +14,8 @@ from tqdm import tqdm
 from dataloader import OccMapDataset
 from models import UNet
 
+from torchvision.utils import make_grid, save_image
+
 ## Setting random seeds
 torch.manual_seed(1234)
 import random
@@ -277,17 +279,18 @@ if __name__ == '__main__':
                 transforms.ConvertImageDtype(torch.float)
             ])
     # load the data
-    full_set = OccMapDataset(filename='./description_ang0.csv', transform=transform)
-    full_size = len(full_set)
+    trainval_set = OccMapDataset(filename='./description_ang0.csv', transform=transform, mode='train')
+    test_set = OccMapDataset(filename='./description_ang0.csv', transform=transform, mode='test')
+    
+    trainval_size = len(trainval_set)
 
-    train_size = int((100 - 2*args.val)/100. * full_size)
-    valid_size = int((100 - args.val)/100. * full_size) - train_size
-    test_size = full_size - train_size - valid_size
+    train_size = int((100 - args.val)/100. * trainval_size)
+    valid_size = trainval_size - train_size
+    test_size = len(test_set)
 
     print(f'Data sizes:\nTrain: {train_size}\nValid: {valid_size}\nTest: {test_size}')
 
-    train_val_set, test_set = torch.utils.data.random_split(full_set, [train_size+valid_size, test_size])
-    train_set, valid_set = torch.utils.data.random_split(train_val_set, [train_size, valid_size])
+    train_set, valid_set = torch.utils.data.random_split(trainval_set, [train_size, valid_size])
 
     # data loader
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size, shuffle=True, num_workers=2)
@@ -312,5 +315,24 @@ if __name__ == '__main__':
 
     test_loss = solver.test(loader=test_loader)
     print(f'Test loss: {test_loss}')
+    
+    ## Plttig results
+    for data in test_loader:
+        images = data['input image']
+        labels = data['target image']
+
+        # placing data on device
+        images = images.to(solver.device)
+        labels = labels.to(solver.device)
+
+        # We don't need gradients here
+        with torch.no_grad():
+            # forward propagation 
+            preds = solver.net(images)
+        break
+    
+    num_examples = 5
+    image_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}.png"
+    save_image(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples), image_path )
     
     print('Done.')
