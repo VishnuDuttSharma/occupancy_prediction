@@ -118,11 +118,15 @@ if __name__ == '__main__':
     acc = (match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
     sns.histplot(acc).set_title('Accuracy histogram')
     image_path = model_path.replace('.pth', '_METRICS.png')
+    if args.show:
+        plt.show()
     plt.savefig(image_path)
     
 
     num_examples = min(5, len(images))
     image_path = model_path.replace('.pth', '_TEST.png')
     save_image(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples), image_path, normalize=True )
-    
+    if args.show:
+        plt.show(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples))
+
     print('Done.')
