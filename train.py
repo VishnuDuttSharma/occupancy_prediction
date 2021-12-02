@@ -68,7 +68,7 @@ class Solver(object):
         self.early_stop = early_stop
         self.outfile = outfile
         self.save_full = save_full
-        self.scale = scale
+        self.scale = torch.tensor(scale).float()
         
         self.writer = SummaryWriter('./logs/' + outfile.replace('.pth', ''))
 
@@ -305,6 +305,7 @@ if __name__ == '__main__':
     # Defining transform
     transform = transforms.Compose([
                 transforms.ToTensor(),
+                transforms.RandomVerticalFlip(p=0.5),
                 transforms.ConvertImageDtype(torch.float)
             ])
     # load the data
