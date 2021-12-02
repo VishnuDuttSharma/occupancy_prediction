@@ -78,6 +78,7 @@ class Solver(object):
         print(f'\tLR: {lr}')
         print(f'\tMax epochs: {max_epoch}')
         print(f'\tEarly stop: {early_stop}')
+        print(f'\tScale: {scale}')
 
     def train(self, train_loader, valid_loader=None):
         """Function to train the model
