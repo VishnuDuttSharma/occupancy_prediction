@@ -331,7 +331,7 @@ if __name__ == '__main__':
     net = UNet(n_channels=1, n_classes=1, bilinear=True)
 
     # train the model
-    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_{args.loss_fn}_scale_{args.scale}.pth"
+    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_{args.loss_fn}_scale_{args.scale}_PROB_ODDSCLAE10.pth"
     
     solver = Solver(net, optimizer='sgd', loss_fn=args.loss_fn, lr=args.lr, max_epoch=args.ep, 
                     verbose=True, save_best=True, early_stop=5, 
