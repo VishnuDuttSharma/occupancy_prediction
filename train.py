@@ -32,6 +32,12 @@ class Solver(object):
         
         if loss_fn == 'mse':
             self.criterion = nn.MSELoss()
+        elif loss_fn == 'mse_prob':
+            def MSEprobloss(pred_odds, gt_odds):
+                pred_prob = torch.exp(pred_odds)/(1 + torch.exp(pred_odds))
+                gt_prob = torch.exp(gt_odds)/(1 + torch.exp(gt_odds))
+                return F.mse_loss(pred_prob, gt_prob)
+            self.criterion = MSEprobloss
         elif loss_fn == 'kl':
             def KLloss(pred_odds, gt_odds):
                 pred_prob = torch.exp(pred_odds)/(1 + torch.exp(pred_odds))
@@ -315,9 +321,9 @@ if __name__ == '__main__':
     net = UNet(n_channels=1, n_classes=1, bilinear=True)
 
     # train the model
-    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_KL.pth"
+    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_MSEProb.pth"
     
-    solver = Solver(net, optimizer='sgd', loss_fn='kl', lr=args.lr, max_epoch=args.ep, 
+    solver = Solver(net, optimizer='sgd', loss_fn='mse_prob', lr=args.lr, max_epoch=args.ep, 
                     verbose=True, save_best=True, early_stop=5, 
                     outfile=model_path, save_full=True)
     if not args.load:
