@@ -24,9 +24,14 @@ random.seed(1234)
 np.random.seed(1234)
 
 class Solver(object):
-    def __init__(self, net, optimizer='sgd', loss_fn='mse', lr=0.1, max_epoch=10, verbose=True, save_best=True, early_stop=None, outfile='./models/some_net.pth', save_full=True):
+    def __init__(self, net, optimizer='sgd', loss_fn='mse', 
+            lr=0.1, max_epoch=10, verbose=True, save_best=True, 
+            early_stop=None, outfile='./models/some_net.pth', save_full=True, scale=1.0, device=None):
         # Your code 
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if device is None:
+            self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        else:
+            self.device = device
 
         self.net = net.to(self.device)
         
@@ -63,8 +68,9 @@ class Solver(object):
         self.early_stop = early_stop
         self.outfile = outfile
         self.save_full = save_full
+        self.scale = scale
         
-        self.writer = SummaryWriter('./logs/')
+        self.writer = SummaryWriter('./logs/' + outfile.replace('.pth', ''))
 
         print('Model will use:')
         print(f'\tLoss function: {loss_fn}')
@@ -122,7 +128,7 @@ class Solver(object):
                 preds = self.net(images)
                 
                 # calculating loss
-                loss = self.criterion(preds, labels)
+                loss = self.criterion(self.scale * preds, self.scale * labels)
                 
                 # backprop
                 loss.backward()
@@ -252,7 +258,7 @@ class Solver(object):
                 preds = self.net(images)
             
             # calculating loss
-            loss = self.criterion(preds, labels)
+            loss = self.criterion(self.scale * preds, self.scale * labels)
 
 #             # Saving the predictions and labels
 #             preds_list.append(preds.cpu().data.argmax(1).numpy())
@@ -286,6 +292,8 @@ def parge_arguments():
     parser.add_argument('--load', '-f', type=str, default=False, help='Load model from a .pth file')
     parser.add_argument('--validation', '-v', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
+    parser.add_argument('--loss-function', '-lf', type=str, dest='loss_fn', default='mse', help='Loss function. Options are mse, mse_prob, kl, wass')
+    parser.add_argument('--scale', '-s', type=float, default=1.0, help='Scale parameters. Predictions and labels are multiplied with it before calculating the loss')
 
     return parser.parse_args()
 
@@ -321,11 +329,11 @@ if __name__ == '__main__':
     net = UNet(n_channels=1, n_classes=1, bilinear=True)
 
     # train the model
-    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_MSEProb.pth"
+    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_{args.loss_fn}_scale_{args.scale}.pth"
     
-    solver = Solver(net, optimizer='sgd', loss_fn='mse_prob', lr=args.lr, max_epoch=args.ep, 
+    solver = Solver(net, optimizer='sgd', loss_fn=args.loss_fn, lr=args.lr, max_epoch=args.ep, 
                     verbose=True, save_best=True, early_stop=5, 
-                    outfile=model_path, save_full=True)
+                    outfile=model_path, save_full=True, scale=args.scale)
     if not args.load:
         solver.train(train_loader, valid_loader)
     else:
@@ -352,7 +360,7 @@ if __name__ == '__main__':
         break
     
     num_examples = 5
-    image_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}.png"
-    save_image(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples), image_path )
+    image_path = model_path.replace('.pth', '.png')
+    save_image(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples), image_path, normalize=True )
     
     print('Done.')
