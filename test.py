@@ -22,7 +22,7 @@ np.random.seed(1234)
 from train import Solver
 
 import matplotlib.pyplot as plt
-import seaborn as sns
+# import seaborn as sns
 
 import torchvision.transforms.functional as F
 
@@ -85,7 +85,7 @@ if __name__ == '__main__':
     
     solver = Solver(net, optimizer='sgd', loss_fn='mse', lr=0.01, max_epoch=1, 
                     verbose=True, save_best=True, early_stop=5, 
-                    outfile=model_path, save_full=True, scale=1.0)
+                    outfile=model_path, save_full=True, scale=1.0, device=torch.device('cpu'))
     
 
     solver.net = torch.load(model_path)
@@ -130,9 +130,11 @@ if __name__ == '__main__':
     
     figs, axes = plt.subplots(1,2)
     frac_inp = 100 * inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
-    sns.histplot(frac_inp, ax=axes[0]).set_title('% cells inpainted')
+    # sns.histplot(frac_inp, ax=axes[0]).set_title('% cells inpainted')
+    plt.hist(frac_imp)
     acc = (match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
-    sns.histplot(acc).set_title('Accuracy histogram')
+    # sns.histplot(acc).set_title('Accuracy histogram')
+    plt.hist(acc)
     image_path = model_path.replace('.pth', '_METRICS.png')
     plt.savefig(image_path)
     
