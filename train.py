@@ -49,7 +49,8 @@ class Solver(object):
                 gt_prob = torch.exp(gt_odds)/(1 + torch.exp(gt_odds))
                 return F.kl_div(pred_prob, gt_prob)
             self.criterion = KLloss
-
+        elif loss_fn == 'kl_raw':
+            self.criterion = nn.KLDivLoss()
         else: # Wasserstien
             raise NotImplementedError
         
