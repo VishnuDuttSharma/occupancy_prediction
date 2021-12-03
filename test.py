@@ -23,6 +23,22 @@ from train import Solver
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+import torchvision.transforms.functional as F
+
+
+plt.rcParams["savefig.bbox"] = 'tight'
+
+
+def show(imgs):
+    if not isinstance(imgs, list):
+        imgs = [imgs]
+    fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    for i, img in enumerate(imgs):
+        img = img.detach()
+        img = F.to_pil_image(img)
+        axs[0, i].imshow(np.asarray(img)[:,:,0], cmap='bone_r')
+        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 ##########################################################################################
 ##########################################################################################
 ##########################################################################################
@@ -31,7 +47,7 @@ def parge_arguments():
     parser = argparse.ArgumentParser(description='Train the UNet on images and target masks')
     parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=128, help='Batch size')
     parser.add_argument('--model_path', '-m', dest='model_path', type=str, default=None, help='Model .pth file location')
-    parser.add_argument('--show', '-m', dest='model_path', type=str, default=None, help='Model .pth file location')
+    parser.add_argument('--show', '-s', dest='show', action='store_true', help='Show the plots')
     
     return parser.parse_args()
 
@@ -73,7 +89,7 @@ if __name__ == '__main__':
     
 
     solver.net = torch.load(model_path)
-    selver.net = solver.net.to(selver.device)
+    solver.net = solver.net.to(solver.device)
     
     input_list = []
     gt_list = []
@@ -101,8 +117,8 @@ if __name__ == '__main__':
     o_gt = np.concatenate(gt_list)
     o_pred = np.concatenate(pred_list)
     
-    inpainted = (o_inp == 0) & (o_pred != 0)
-    sensed_cells = (o_inp != 0)
+    inpainted = (o_inp == 0.5) & ((o_pred > 0.505) | (o_pred < 0.495))
+    sensed_cells = (o_inp != 0.5)
     
     inpainted_flat = inpainted.reshape(inpainted.shape[0], -1)
     sensed_cells_flat = sensed_cells.reshape(sensed_cells.shape[0],-1)
@@ -113,13 +129,11 @@ if __name__ == '__main__':
     match_flat = match.reshape(match.shape[0], -1)
     
     figs, axes = plt.subplots(1,2)
-    frac_inp = 100%inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
+    frac_inp = 100 * inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
     sns.histplot(frac_inp, ax=axes[0]).set_title('% cells inpainted')
     acc = (match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
     sns.histplot(acc).set_title('Accuracy histogram')
     image_path = model_path.replace('.pth', '_METRICS.png')
-    if args.show:
-        plt.show()
     plt.savefig(image_path)
     
 
@@ -127,6 +141,7 @@ if __name__ == '__main__':
     image_path = model_path.replace('.pth', '_TEST.png')
     save_image(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples), image_path, normalize=True )
     if args.show:
-        plt.show(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples))
+        show(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples))
+        plt.show()
 
     print('Done.')
