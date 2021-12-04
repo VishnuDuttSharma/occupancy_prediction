@@ -55,6 +55,9 @@ class Solver(object):
             self.criterion = nn.KLDivLoss(log_target=True, reduce='batchmean')
             test_tensor = torch.rand((8,1,256,256))
             print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
+        elif loss_fn == 'bce':
+            print('Using binary cross entropy loss')
+            self.criterion = nn.BCELoss()
         else: # Wasserstien
             raise NotImplementedError
         
