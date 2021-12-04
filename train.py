@@ -50,7 +50,7 @@ class Solver(object):
                 return F.kl_div(pred_prob, gt_prob)
             self.criterion = KLloss
         elif loss_fn == 'kl_raw':
-            self.criterion = nn.KLDivLoss()
+            self.criterion = nn.KLDivLoss(reduction='batchmean')
         else: # Wasserstien
             raise NotImplementedError
         
@@ -96,6 +96,9 @@ class Solver(object):
         # Your code 
         ## Initialing minimum loss with a large value
         min_valid_loss = np.inf
+        
+        epsilon = 1e-5
+        
         ## Indicator for early stopping
         stopping = False
 
@@ -179,7 +182,7 @@ class Solver(object):
             self.writer.add_scalar("GlobalLoss/valid", valid_loss, global_count)
             
             ## If current loss is less than minimum loss so far, update it and save model
-            if valid_loss <= min_valid_loss:
+            if (valid_loss-min_valid_loss) < epsilon:
                 min_valid_loss = valid_loss
                 
                 ## Saving model or model state_dict
