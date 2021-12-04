@@ -47,9 +47,10 @@ class Solver(object):
             def KLloss(pred_odds, gt_odds):
                 pred_prob = torch.exp(pred_odds)/(1 + torch.exp(pred_odds))
                 gt_prob = torch.exp(gt_odds)/(1 + torch.exp(gt_odds))
-                return F.kl_div(pred_prob, gt_prob)
+                return F.kl_div(input=pred_prob, target=gt_prob)
             self.criterion = KLloss
         elif loss_fn == 'kl_raw':
+            print('Using KL loss diretcly')
             self.criterion = nn.KLDivLoss(reduction='batchmean')
         else: # Wasserstien
             raise NotImplementedError
@@ -133,7 +134,7 @@ class Solver(object):
                 preds = self.net(images)
                 
                 # calculating loss
-                loss = self.criterion(self.scale * preds, self.scale * labels)
+                loss = self.criterion(input=self.scale * preds, target=self.scale * labels)
                 
                 # backprop
                 loss.backward()
