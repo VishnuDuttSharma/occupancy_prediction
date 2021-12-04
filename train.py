@@ -297,8 +297,8 @@ def parge_arguments():
     parser.add_argument('--load', '-f', type=str, default=False, help='Load model from a .pth file')
     parser.add_argument('--validation', '-v', dest='val', type=float, default=10.0,
                         help='Percent of the data that is used as validation (0-100)')
-    parser.add_argument('--loss-function', '-lf', type=str, dest='loss_fn', default='mse', help='Loss function. Options are mse, mse_prob, kl, wass')
-    parser.add_argument('--scale', '-s', type=float, default=1.0, help='Scale parameters. Predictions and labels are multiplied with it before calculating the loss')
+    parser.add_argument('--loss-function', '-lf', type=str, dest='loss_fn', default='mse', help='Loss function. Options are mse, mse_prob, kl_raw, wass')
+    parser.add_argument('--scale', '-s', type=float, default=1.0, help='Scale parameters. Predictions and labels are multiplied with it before calculating the loss. Use only if loss is very small')
 
     return parser.parse_args()
 
