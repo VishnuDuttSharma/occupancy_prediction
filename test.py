@@ -85,7 +85,7 @@ if __name__ == '__main__':
     
     solver = Solver(net, optimizer='sgd', loss_fn='mse', lr=0.01, max_epoch=1, 
                     verbose=True, save_best=True, early_stop=5, 
-                    outfile=model_path, save_full=True, scale=1.0, device=torch.device('cpu'))
+                    outfile=model_path, save_full=True, scale=1.0, device=torch.device('cuda'))
     
 
     solver.net = torch.load(model_path)
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     gt_list = []
     pred_list = []
     ## Plotting results
-    for data in test_loader:
+    for data in tqdm(test_loader):
         images = data['input image']
         labels = data['target image']
 
@@ -117,6 +117,9 @@ if __name__ == '__main__':
     o_gt = np.concatenate(gt_list)
     o_pred = np.concatenate(pred_list)
     
+    print('o_pred stats: ', o_pred.min(), o_pred.max(), o_pred.mean())
+    print('o_gt stats: ', o_gt.min(), o_gt.max(), o_gt.mean())
+
     inpainted = (o_inp == 0.5) & ((o_pred > 0.505) | (o_pred < 0.495))
     sensed_cells = (o_inp != 0.5)
     
@@ -131,13 +134,16 @@ if __name__ == '__main__':
     figs, axes = plt.subplots(1,2)
     frac_inp = 100 * inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
     # sns.histplot(frac_inp, ax=axes[0]).set_title('% cells inpainted')
-    plt.hist(frac_imp)
+    plt.hist(frac_inp)
+    plt.title('% cells inpainted')
     acc = (match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
     # sns.histplot(acc).set_title('Accuracy histogram')
     plt.hist(acc)
+    plt.title('Accuracy histogram')
     image_path = model_path.replace('.pth', '_METRICS.png')
     plt.savefig(image_path)
     
+    print(f'Average accuracy: {acc.mean()}')
 
     num_examples = min(5, len(images))
     image_path = model_path.replace('.pth', '_TEST.png')
