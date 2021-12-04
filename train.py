@@ -44,6 +44,7 @@ class Solver(object):
                 return F.mse_loss(pred_prob, gt_prob)
             self.criterion = MSEprobloss
         elif loss_fn == 'kl':
+            print('Will use KL assuming inputs/outputs are log-odds')
             def KLloss(pred_odds, gt_odds):
                 pred_prob = torch.exp(pred_odds)/(1 + torch.exp(pred_odds))
                 gt_prob = torch.exp(gt_odds)/(1 + torch.exp(gt_odds))
@@ -51,7 +52,9 @@ class Solver(object):
             self.criterion = KLloss
         elif loss_fn == 'kl_raw':
             print('Using KL loss diretcly')
-            self.criterion = nn.KLDivLoss(reduction='batchmean')
+            self.criterion = nn.KLDivLoss(log_target=True, reduce='batchmean')
+            test_tensor = torch.rand((8,1,256,256))
+            print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
         else: # Wasserstien
             raise NotImplementedError
         
@@ -135,7 +138,7 @@ class Solver(object):
                 
                 # calculating loss
                 loss = self.criterion(input=self.scale * preds, target=self.scale * labels)
-                
+                # print(self.criterion(input=self.scale * images, target=self.scale * labels))
                 # backprop
                 loss.backward()
                 self.optimizer.step()
@@ -264,7 +267,7 @@ class Solver(object):
                 preds = self.net(images)
             
             # calculating loss
-            loss = self.criterion(self.scale * preds, self.scale * labels)
+            loss = self.criterion(input=self.scale * preds, target=self.scale * labels)
 
 #             # Saving the predictions and labels
 #             preds_list.append(preds.cpu().data.argmax(1).numpy())
