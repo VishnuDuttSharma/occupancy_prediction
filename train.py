@@ -51,12 +51,14 @@ class Solver(object):
                 return F.kl_div(input=pred_prob, target=gt_prob)
             self.criterion = KLloss
         elif loss_fn == 'kl_log_n_prob':
-            print('Uses log prob for input/prodictions and probs for output/target'):
+            print('Uses log prob for input/prodictions and probs for output/target')
             def KLloss(input, target):
                 pred_logprob = torch.log(input)
                 gt_prob = target
-                return F.kl_div(input=prod_logprob, target=gt_prob, log_target=False, reduce='batchmean')
+                return F.kl_div(input=pred_logprob, target=gt_prob, log_target=False, reduce='batchmean')
             self.criterion = KLloss
+            test_tensor = torch.rand((8,1,256,256))
+            print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
         elif loss_fn == 'kl_raw':
             print('Using KL loss diretcly')
             self.criterion = nn.KLDivLoss(log_target=True, reduce='batchmean')
