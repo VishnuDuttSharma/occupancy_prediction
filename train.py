@@ -50,9 +50,25 @@ class Solver(object):
                 gt_prob = torch.exp(gt_odds)/(1 + torch.exp(gt_odds))
                 return F.kl_div(input=pred_prob, target=gt_prob)
             self.criterion = KLloss
+        elif loss_fn == 'kl_log_n_prob':
+            print('Uses log prob for input/prodictions and probs for output/target'):
+            def KLloss(input, target):
+                pred_logprob = torch.log(input)
+                gt_prob = target
+                return F.kl_div(input=prod_logprob, target=gt_prob, log_target=False, reduce='batchmean')
+            self.criterion = KLloss
         elif loss_fn == 'kl_raw':
             print('Using KL loss diretcly')
             self.criterion = nn.KLDivLoss(log_target=True, reduce='batchmean')
+            test_tensor = torch.rand((8,1,256,256))
+            print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
+        elif loss_fn == 'soft_kl':
+            print('Using Softmax-KL')
+            def SoftKL(input, target):
+                pred_soft = torch.distributions.categorical.Categorical(probs=input.flatten(start_dim=1))
+                gt_soft = torch.distributions.categorical.Categorical(probs=target.flatten(start_dim=1))
+                return torch.distributions.kl.kl_divergence(q=pred_soft, p=gt_soft).sum()
+            self.criterion = SoftKL
             test_tensor = torch.rand((8,1,256,256))
             print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
         elif loss_fn == 'bce':
