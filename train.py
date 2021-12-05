@@ -69,7 +69,8 @@ class Solver(object):
             self.optimizer = optim.Adadelta(self.net.parameters(), lr=lr)
         
         if early_stop is not None:
-            self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=3)
+            # self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(self.optimizer, 'min', patience=3)
+            self.scheduler = optim.lr_scheduler.CyclicLR(self.optimizer, base_lr= lr/10., max_lr=lr)
         
         self.max_epoch = max_epoch
         self.verbose = verbose
@@ -184,7 +185,9 @@ class Solver(object):
             if self.verbose:
                 print(f'Validation loss: {valid_loss}')
             
-            self.scheduler.step(valid_loss)
+            # self.scheduler.step(valid_loss)
+            self.scheduler.step()
+
             self.writer.add_scalar("Loss/valid", valid_loss, ep+1)
             self.writer.add_scalar("GlobalLoss/valid", valid_loss, global_count)
             
@@ -342,9 +345,10 @@ if __name__ == '__main__':
     net = UNet(n_channels=1, n_classes=1, bilinear=True)
 
     # train the model
-    model_path = f"./saved_models/{'sgd'}_LR_{args.lr}_epoch_{args.ep}_{args.loss_fn}_scale_{args.scale}_PROB_ODDSCLAE10.pth"
+    optimizer_name = 'sgd'
+    model_path = f"./saved_models/{optimizer_name}_CyclicLR_{args.lr}_epoch_{args.ep}_{args.loss_fn}_scale_{args.scale}_PROB_ODDSCLAE10.pth"
     
-    solver = Solver(net, optimizer='sgd', loss_fn=args.loss_fn, lr=args.lr, max_epoch=args.ep, 
+    solver = Solver(net, optimizer=optimizer_name, loss_fn=args.loss_fn, lr=args.lr, max_epoch=args.ep, 
                     verbose=True, save_best=True, early_stop=5, 
                     outfile=model_path, save_full=True, scale=args.scale)
     if not args.load:
