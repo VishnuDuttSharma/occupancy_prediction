@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import torch.utils.data as data
 from torchvision import transforms
+import torchvision.transforms.functional as TF
 
 class OccMapDataset(data.Dataset):
     def __init__(self, filename='./description_ang0.csv', transform=None, input_dir='./inp_data/', target_dir='./gt_data/', mode='train', odds_to_prob=True, scale=10.):
