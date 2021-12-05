@@ -49,5 +49,9 @@ class OccMapDataset(data.Dataset):
         if self.transform is not None:
             data_dict['input image'] = self.transform(data_dict['input image'])
             data_dict['target image'] = self.transform(data_dict['target image'])
+            
+        if np.random.random() > 0.5:
+            data_dict['input image'] = TF.vflip(data_dict['input image'])
+            data_dict['target image'] = TF.vflip(data_dict['target image'])
          
         return data_dict

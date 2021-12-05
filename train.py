@@ -316,7 +316,7 @@ if __name__ == '__main__':
     # Defining transform
     transform = transforms.Compose([
                 transforms.ToTensor(),
-                transforms.RandomVerticalFlip(p=0.5),
+#                 transforms.RandomVerticalFlip(p=0.5),  ## Removing as it doesn't apply same to both the images
                 transforms.ConvertImageDtype(torch.float)
             ])
     # load the data
