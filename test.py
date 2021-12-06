@@ -147,6 +147,7 @@ if __name__ == '__main__':
     image_path = model_path.replace('.pth', '_METRICS.png')
     plt.savefig(image_path)
     
+    print(f'Average cells inpainted: {100*frac_inp.mean():.3f}%')
     print(f'Average accuracy: {100*acc.mean():.3f}%')
 
     num_examples = min(5, len(images))
