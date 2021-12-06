@@ -48,7 +48,7 @@ def parge_arguments():
     parser.add_argument('--batch-size', '-b', dest='batch_size', metavar='B', type=int, default=128, help='Batch size')
     parser.add_argument('--model_path', '-m', dest='model_path', type=str, default=None, help='Model .pth file location')
     parser.add_argument('--error-margin', '-em', dest='margin', metavar='E', type=float, default=5, help='Error margin. Default is 5%. It means regions with output probability within 5% of 0.50 are considered as unknown/uncertain')
-    parser.add_argument('--show', '-s', dest='show', action='store_true', help='Show the plots')
+    parser.add_argument('--show', '-s', dest='show', action='store_false', help='Show the plots')
     
     return parser.parse_args()
 
