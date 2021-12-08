@@ -89,7 +89,7 @@ if __name__ == '__main__':
                     outfile=model_path, save_full=True, scale=1.0, device=torch.device('cuda'))
     
 
-    solver.net = torch.load(model_path)
+    solver.net = torch.load(model_path, map_location=solver.device)
     solver.net = solver.net.to(solver.device)
     
     input_list = []
