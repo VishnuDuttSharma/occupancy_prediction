@@ -73,6 +73,26 @@ class Solver(object):
             self.criterion = SoftKL
             test_tensor = torch.rand((8,1,256,256))
             print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
+        elif loss_fn == 'bce_kl':
+            print('Using BCE as KL')
+            def BCE_KL(input, target):
+                pred = input.flatten(start_dim=1)
+                label = target.flatten(start_dim=1)
+                cross_ent  = -label * torch.log(pred) - (1-label) * torch.log(1-pred)
+                return cross_ent.sum(dim=1).mean()
+            self.criterion = BCE_KL
+            test_tensor = torch.rand((8,1,256,256))
+            print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
+        elif loss_fn == 'jsdiv':
+            print('Using BCE as KL')
+            def JS_DIV(input, target):
+                pred = input.flatten(start_dim=1)
+                label = target.flatten(start_dim=1)
+                jsdiv  = -(label+pred) * torch.log(pred) - (2-label-pred) * torch.log(1-pred) + pred * torch.log(label) + (1-pred) * torch.log(1-label)
+                return jsdiv.mean()
+            self.criterion = JS_DIV
+            test_tensor = torch.rand((8,1,256,256))
+            print(f'Testing: loss for same distributions is {self.criterion(test_tensor, test_tensor)}')
         elif loss_fn == 'bce':
             print('Using binary cross entropy loss')
             self.criterion = nn.BCELoss()
