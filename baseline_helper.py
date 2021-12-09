@@ -647,7 +647,7 @@ def get_occ_map(pcd, floor_colors, ceiling_colors, ll_factor=0.01, max_pts=10):
 
     comb_occ_map = occ_occ_map - free_occ_map
 
-    occ_map =  np.clip(comb_occ_map, a_min=-max_pts, a_max=max_pts).astype(np.uint8)
+    occ_map =  np.clip(comb_occ_map, a_min=-max_pts, a_max=max_pts).astype(np.int8)
 
     return occ_map
 

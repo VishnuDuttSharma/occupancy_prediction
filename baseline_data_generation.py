@@ -35,6 +35,7 @@ for fl_num in tqdm(range(201, 231)):
     print(f'Reachable positions: {len(positions)}')
     floor_color = [x['color'] for x in controller.controller.last_event.metadata['colors'] if 'floor' in x['name'].lower()]
     ceiling_color = [x['color'] for x in controller.controller.last_event.metadata['colors'] if 'ceiling' in x['name'].lower()]
+
     
     for cnt in range(500):
         pos = np.random.choice(positions)
@@ -60,6 +61,7 @@ for fl_num in tqdm(range(201, 231)):
         gt_map = np.maximum(np.abs(low_occ_map), np.abs(high_occ_map)) * np.sign(low_occ_map + high_occ_map)
         
         free_perc = 100*np.sum(gt_map == 0)/gt_map.size
+        occ_perc = 100*np.sum(inp_map != 0)/inp_map.size
 
         file_name = f'FP{fl_num}_{cnt}'
         desc = {}
@@ -72,12 +74,14 @@ for fl_num in tqdm(range(201, 231)):
         desc['ang_y'] = orient['y']
         desc['ang_z'] = orient['z']
         desc['free_perc'] = free_perc
+        desc['occ_perc'] = occ_perc
 
         np.save(inp_dir+file_name+'.npy', arr=inp_map)
         np.save(gt_dir+file_name+'.npy', arr=gt_map)
 
         df = df.append(desc, ignore_index=True)
 
+    
 
 df.to_csv(descfile)
 
