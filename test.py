@@ -123,36 +123,61 @@ if __name__ == '__main__':
     
     em = args.margin / 1000.
     print(f'Using error margin of {args.margin:.3f}% i.e. {em:.5f}')
+    
+    em_local = [5, 10, 25, 50, 100, 150, 250]
+    inp_dict = {}
+    acc_dict = {}
+    for em in em_local:
+        em_val = em/1000.
+        inpainted = (o_inp == 0.5) & ((o_pred > (0.5+em_val)) | (o_pred < (0.5-em_val)))
+        sensed_cells = (o_inp != 0.5)
 
-    inpainted = (o_inp == 0.5) & ((o_pred > (0.5+em)) | (o_pred < (0.5-em)))
-    sensed_cells = (o_inp != 0.5)
-    
-    inpainted_flat = inpainted.reshape(inpainted.shape[0], -1)
-    sensed_cells_flat = sensed_cells.reshape(sensed_cells.shape[0],-1)
-    
-    occ_map_pred = convert_to_occ(o_pred, low_prob_thresh=(0.5-em), high_prob_thresh=(0.5+em))
-    occ_map_gt = convert_to_occ(o_gt, low_prob_thresh=(0.5-em), high_prob_thresh=(0.5+em))
-    match  = (occ_map_pred == occ_map_gt)
-    match_flat = match.reshape(match.shape[0], -1)
-    
-    figs, axes = plt.subplots(1,2)
-    frac_inp = inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
+        inpainted_flat = inpainted.reshape(inpainted.shape[0], -1)
+        sensed_cells_flat = sensed_cells.reshape(sensed_cells.shape[0],-1)
+
+        occ_map_pred = convert_to_occ(o_pred, low_prob_thresh=(0.5-em_val), high_prob_thresh=(0.5+em_val))
+        occ_map_gt = convert_to_occ(o_gt, low_prob_thresh=(0.5-em_val), high_prob_thresh=(0.5+em_val))
+        match  = (occ_map_pred == occ_map_gt)
+        match_flat = match.reshape(match.shape[0], -1)
+
+        frac_inp = inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
+        acc = (match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
+
+        if np.isnan(acc.mean()):
+            break
+
+        inp_dict[em] = frac_inp
+        acc_dict[em] = acc
+
+        print(f'Margin: {em}, %inp: {frac_inp.mean()*100}, acc_dict: {acc.mean()*100}')
+
+    em_local = em_local[:len(acc_dict)]
+
+    figs, axes = plt.subplots(1,3)
+    axes[0].bar(x=np.arange(len(acc_dict)), height=[100*acc_dict[x].mean() for x in em_local], width=0.5)
+    axes[0].set_xticks(np.arange(len(acc_dict)))
+    axes[0].set_xticklabels([r'0.5$\pm$'+f'{x/1000.:.3f}' for x in em_local], rotation =-30)
+    axes[0].set_title('Avg. accuracy v/s Error margin')
+
+    frac_inp = inp_dict[int(args.margin)] #inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
     # sns.histplot(frac_inp, ax=axes[0]).set_title('% cells inpainted')
-    axes[0].hist(frac_inp)
-    axes[0].set_title('Histogram of cells inpainted')
-    acc = (match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
+    axes[1].hist(frac_inp)
+    axes[1].set_title('Histogram of cells inpainted')
+
+    acc = acc_dict[int(args.margin)] #(match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
     # sns.histplot(acc).set_title('Accuracy histogram')
-    axes[1].hist(acc)
-    axes[1].set_title('Accuracy histogram')
+    axes[2].hist(acc)
+    axes[2].set_title('Accuracy histogram')
     image_path = model_path.replace('.pth', '_METRICS.png')
     plt.savefig(image_path)
-    
-    print(f'Average cells inpainted: {100*frac_inp.mean():.3f}%')
+
+    print(f'Average inpainted cells: {100*frac_inp.mean():.3f}%')
     print(f'Average accuracy: {100*acc.mean():.3f}%')
+    
 
     num_examples = min(5, len(images))
     image_path = model_path.replace('.pth', '_TEST.png')
-    save_image(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples), image_path, normalize=True )
+    save_image(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples), image_path )
     if args.show:
         show(make_grid(torch.cat([images[:num_examples], labels[:num_examples], preds[:num_examples]], axis=0).cpu(), nrow=num_examples))
         plt.show()
