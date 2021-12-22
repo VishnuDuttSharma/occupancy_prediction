@@ -13,7 +13,7 @@ from tqdm import tqdm
 g_count = 0
 inp_dir = 'inp_data/'
 gt_dir = 'gt_data/'
-descfile = 'description_ang0.csv'
+descfile = 'updated_description_ang0.csv'
 
 df = pd.DataFrame(columns=['Filename',
                            'FloorName',
@@ -61,6 +61,7 @@ for fl_num in tqdm(range(201, 231)):
             gt_map = np.maximum(np.abs(inp_occ_map), np.maximum(np.abs(left_occ_map), np.abs(right_occ_map))) * np.sign(inp_occ_map + left_occ_map + right_occ_map)
 
             free_perc = 100*np.sum(gt_map == 0)/gt_map.size
+            occ_perc = 100*np.sum(inp_occ_map != 0)/inp_occ_map.size
 
             file_name = f'FP{fl_num}_{g_count}'
             desc = {}
@@ -73,6 +74,7 @@ for fl_num in tqdm(range(201, 231)):
             desc['ang_y'] = orient['y']
             desc['ang_z'] = orient['z']
             desc['free_perc'] = free_perc
+            desc['occ_perc'] = occ_perc
 
             np.save(inp_dir+file_name+'.npy', arr=inp_occ_map)
             np.save(gt_dir+file_name+'.npy', arr=gt_map)
