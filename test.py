@@ -69,7 +69,7 @@ if __name__ == '__main__':
                 transforms.ConvertImageDtype(torch.float)
             ])
     # load the data
-    test_set = OccMapDataset(filename='./description_ang0.csv', transform=transform, mode='test')
+    test_set = OccMapDataset(filename='./description_ang0.csv', transform=transform, mode='test', scale=1)
     
     test_size = len(test_set)
 
@@ -124,12 +124,15 @@ if __name__ == '__main__':
     em = args.margin / 1000.
     print(f'Using error margin of {args.margin:.3f}% i.e. {em:.5f}')
     
+    prediction_mask = np.load('./prediction_mask.npy')
+
     em_local = [5, 10, 25, 50, 100, 150, 250]
     inp_dict = {}
     acc_dict = {}
     for em in em_local:
         em_val = em/1000.
-        inpainted = (o_inp == 0.5) & ((o_pred > (0.5+em_val)) | (o_pred < (0.5-em_val)))
+        # inpainted = (o_inp == 0.5) & ((o_pred > (0.5+em_val)) | (o_pred < (0.5-em_val)))
+        inpainted = (o_inp == 0.5) & ((o_pred > (0.5+em_val)) | (o_pred < (0.5-em_val))) & (o_gt != 0.5) #prediction_mask
         sensed_cells = (o_inp != 0.5)
 
         inpainted_flat = inpainted.reshape(inpainted.shape[0], -1)
@@ -159,12 +162,12 @@ if __name__ == '__main__':
     axes[0].set_xticklabels([r'0.5$\pm$'+f'{x/1000.:.3f}' for x in em_local], rotation =-30)
     axes[0].set_title('Avg. accuracy v/s Error margin')
 
-    frac_inp = inp_dict[int(args.margin)] #inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
+    frac_inp = 100*inp_dict[int(args.margin)] #inpainted.reshape(inpainted.shape[0], -1).sum(axis=1)/(o_inp.shape[-1]*o_inp.shape[-2])
     # sns.histplot(frac_inp, ax=axes[0]).set_title('% cells inpainted')
     axes[1].hist(frac_inp)
     axes[1].set_title('Histogram of cells inpainted')
 
-    acc = acc_dict[int(args.margin)] #(match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
+    acc = 100*acc_dict[int(args.margin)] #(match_flat * inpainted_flat).sum(axis=1)/inpainted_flat.sum(axis=1)
     # sns.histplot(acc).set_title('Accuracy histogram')
     axes[2].hist(acc)
     axes[2].set_title('Accuracy histogram')
