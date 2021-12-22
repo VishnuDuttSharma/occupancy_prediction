@@ -230,7 +230,7 @@ class Solver(object):
             self.writer.add_scalar("GlobalLoss/valid", valid_loss, global_count)
             
             ## If current loss is less than minimum loss so far, update it and save model
-            if (valid_loss-min_valid_loss) < epsilon:
+            if (valid_loss-min_valid_loss) < -epsilon:
                 min_valid_loss = valid_loss
                 
                 ## Saving model or model state_dict
@@ -384,10 +384,10 @@ if __name__ == '__main__':
 
     # train the model
     optimizer_name = 'adam'
-    model_path = f"./saved_models/{optimizer_name}_CyclicLR_{args.lr}_epoch_{args.ep}_{args.loss_fn}_scale_{args.scale}_PROB_ODDSCLAE10.pth"
+    model_path = f"./saved_models/{optimizer_name}_CyclicLR_{args.lr}_epoch_{args.ep}_{args.loss_fn}_scale_{args.scale}_PROB_ODDSCLAE1_ES.pth"
     
     solver = Solver(net, optimizer=optimizer_name, loss_fn=args.loss_fn, lr=args.lr, max_epoch=args.ep, 
-                    verbose=True, save_best=True, early_stop=5, 
+                    verbose=True, save_best=True, early_stop=10,#5, 
                     outfile=model_path, save_full=True, scale=args.scale)
     if not args.load:
         solver.train(train_loader, valid_loader)
